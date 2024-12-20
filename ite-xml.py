@@ -2,21 +2,29 @@ import requests
 import xml.etree.ElementTree as ET
 
 # Parse the XML file
-tree = ET.parse('note.xml')  # Replace 'note.xml' with your file path
+tree = ET.parse('22MK5796598D01V6000072.xml')  # Replace 'note.xml' with your file path
 root = tree.getroot()
+# Define the namespace
+namespace = {'ns': 'cdeps:import:messages'}
 
 # Find all <naim> elements inside <body>
-naim_nodes = root.find('body').findall('naim')
+gdi_nodes = root.findall('ns:GOOITEGDS', namespace)
 
-# Create strings in the format {num}-{tar}
+
+
 result = []
-for naim in naim_nodes:
-    num = naim.find('num').text if naim.find('num') is not None else ''
-    tar = naim.find('tar').text if naim.find('tar') is not None else ''
-    result.append(f"{num}-{tar}")
+for gdi in gdi_nodes:
+    gdi_num = gdi.find('ns:IteNumGDS7', namespace).text if gdi.find('ns:IteNumGDS7', namespace) is not None else ''
+    gross_mass = gdi.find('ns:GooDesGDS23', namespace).text if gdi.find('ns:GooDesGDS23', namespace) is not None else ''
+    result.append(f"{gdi_num}-{gross_mass}")
+break
 
-# Print the results
-    print(" ".join(result))
+
+print("Loop exited after processing the first GOOITEGDS node.")
+
+
+
+
 # url="https://www.dataaccess.com/webservicesserver/NumberConversion.wso"
 # #headers = {'content-type': 'application/soap+xml'}
 # headers = {'content-type': 'text/xml'}
