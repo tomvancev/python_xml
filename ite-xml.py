@@ -6,12 +6,18 @@ import html
 import re
 import argparse
 import sys
+from datetime import date
+
+
+today = date.today()
 
 parser = argparse.ArgumentParser(description="This script accepts command-line arguments.")
 
 parser.add_argument('filename', type=str, help="Xml Name")
-parser.add_argument('--date', type=str, help="Date of Registration in YYYY-MM-DD format", default='2023-11-23', required=False)
-parser.add_argument('--data', type=str, help="JSON-encoded object",  required=False)
+parser.add_argument('--date', type=str, help="Date of Registration in YYYY-MM-DD format. If left empty it will use today's daye",
+                     default= today.strftime("%Y-%m-%d"), required=False)
+parser.add_argument('--data', type=str, help="JSON-encoded object for supplementary unit type eg. '[{\"key\":\"54\",\"sup\":\"MTK\"}]'",
+                      required=False)
 args = parser.parse_args()
 sup_data = None
 if args.data: 
