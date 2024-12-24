@@ -1,0 +1,21 @@
+<SAD>
+  <ITM id="1" isExport="false">
+    <GDS nbr="8703339010">
+      <gds_descr>Of cylinder capacity exceeding 2500 cm3 but not exceeding 3000cm2</gds_descr>
+      <gds_ind>4</gds_ind>
+    </GDS>
+    <GEO>
+      <geo_area_id>GB</geo_area_id>
+      <geo_area_descr>United Kingdom</geo_area_descr>
+    </GEO>
+    <ALRT id="1">
+      <alrt_level>2</alrt_level>
+      <alrt_code>202</alrt_code>
+      <alrt_text>CR2: Importation of declared commodity is not allowed.</alrt_text>
+    </ALRT>
+    <fullAmountDuties>0</fullAmountDuties>
+    <missErrCerts>
+      <missCert>2059 / I038 / N101</missCert>
+    </missErrCerts>
+  </ITM>
+</SAD>

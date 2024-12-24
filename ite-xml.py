@@ -1,11 +1,33 @@
+import json
 import requests
 import xml.etree.ElementTree as ET
 from lxml import etree
 import html
 import re
+import argparse
+import sys
 
-date_sub = '2023-11-23'
-xml_name = '22MK5796598D01V6000072'
+parser = argparse.ArgumentParser(description="This script accepts command-line arguments.")
+
+parser.add_argument('filename', type=str, help="Xml Name")
+parser.add_argument('--date', type=str, help="Date of Registration in YYYY-MM-DD format", default='2023-11-23', required=False)
+parser.add_argument('--data', type=str, help="JSON-encoded object",  required=False)
+args = parser.parse_args()
+sup_data = None
+if args.data: 
+    try:
+        jsondata= json.loads(args.data)
+        sup_data = {item["key"]: item for item in jsondata}
+    except json.JSONDecodeError as e:
+        print("Error decoding JSON:", e)
+
+if not args.date or not args.filename:
+    print("Error: Both 'date' and 'filename' are mandatory arguments.")
+    sys.exit(1)  # Stop the script with a non-zero exit code (error)
+
+
+date_sub = args.date #'2023-11-23'
+xml_name = args.filename # '22MK5796598D01V6000072'
 # Parse the XML file
 tree = ET.parse('files\\imd\\' + xml_name + '.xml')  # Replace 'note.xml' with your file path
 root = tree.getroot()
@@ -71,10 +93,14 @@ def createGdi(gdi):
             <ADD>
                 <additional_expenses>{gdi["add_exp"]}</additional_expenses>
             </ADD>"""
-    if(gdi["sup"] is not None):
+    if(gdi["sup"]):
+        supl_unit ="NAR"
+        if sup_data is not None:
+            supl_unit = sup_data.get(gdi["num"])["sup"] if sup_data.get(gdi["num"]) else "NAR"
+
         gdi_str+= f"""\n\t\t\t<SUP>
                 <sup_element>
-                    <suppl_unit_code>NAR</suppl_unit_code> 
+                    <suppl_unit_code>{supl_unit}</suppl_unit_code> 
                     <suppl_unit_quant>{gdi["sup"]}</suppl_unit_quant> 
                 </sup_element>
             </SUP>"""
@@ -135,7 +161,7 @@ if match:
     content = match.group(1)  # Extract the captured content
     root = etree.fromstring(content)
     pretty_xml = etree.tostring(root, pretty_print=True, encoding="unicode")
-    with open('files\\res\\res-' + xml_name + '.xml','w') as file:
+    with open(f'files\\res\\res-{xml_name}-{date_sub}.xml','w') as file:
         file.write(pretty_xml)
         print(f"Sucess")
 else:

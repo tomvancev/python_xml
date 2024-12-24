@@ -1,0 +1,1 @@
+python ite-xml.py 22MKIM101300013520-IMD15-izmenet --date "2024-12-24" --data '[{"key":"54","sup":"MTK"}]'
