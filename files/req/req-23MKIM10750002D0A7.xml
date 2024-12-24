@@ -1,0 +1,67 @@
+<soapenv:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:calc="http://bull.com.pl/calc">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <calc:calculate soapenv:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+         <TARIC_query xsi:type="xsd:string"><![CDATA[<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+			<TARIC_query xmlns="http://bull.com.pl/calc/calcxml" xmlns:xsp="http://apache.org/xsp" xmlns:input="http://apache.org/cocoon/xsp/input/1.0" xmlns:util="http://apache.org/xsp/util/2.0" xmlns:cinclude="http://apache.org/cocoon/include/1.0" xmlns:xsp-request="http://apache.org/xsp/request/2.0" id="SADSCREEN">
+				<QINF>
+					<transaction Id="T1">T1</transaction>
+					<language Id="EN">EN</language>
+					<currency Id="MKD">MKD</currency>
+				</QINF>
+				<SAD>
+					<DTE>
+						<dat_quest>2023-11-23</dat_quest>
+					</DTE>
+					<CUR>
+						<currency>EUR</currency>
+					</CUR>
+					<ITEMS>
+		<ITM id="1">
+            <GDS nbr="8703339010">
+                <add_cod>L011</add_cod>
+            </GDS>
+            <GEO>
+                <geo_area_id>GB</geo_area_id>
+            </GEO>
+            <CPC>
+                <eu_proc_code>4000</eu_proc_code>
+                <nat_proc_code>000</nat_proc_code>
+            </CPC>
+            <PRF>
+                <pref_code>100</pref_code>
+            </PRF>
+            <WGT>
+                <net_weight>2183</net_weight>
+                <gr_weight>2183</gr_weight>
+            </WGT>
+            <VAL>
+                <customs_value>1297797.7</customs_value>
+            </VAL>
+            <ADD>
+                <additional_expenses>0</additional_expenses>
+            </ADD>
+			<SUP>
+                <sup_element>
+                    <suppl_unit_code>NAR</suppl_unit_code> 
+                    <suppl_unit_quant>1</suppl_unit_quant> 
+                </sup_element>
+            </SUP>
+			<DOC>
+				<doc_id>5011</doc_id>
+				<doc_id>POAN</doc_id>
+				<doc_id>5071</doc_id>
+				<doc_id>4005</doc_id>
+				<doc_id>5077</doc_id>
+			</DOC>
+        </ITM>
+	</ITEMS>
+				</SAD>
+				<OPTIONS>
+					<forWeb>true</forWeb>
+				</OPTIONS>
+			</TARIC_query>
+			]]></TARIC_query>
+      </calc:calculate>
+   </soapenv:Body>
+</soapenv:Envelope>

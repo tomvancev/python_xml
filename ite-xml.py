@@ -1,8 +1,13 @@
 import requests
 import xml.etree.ElementTree as ET
+from lxml import etree
+import html
+import re
 
+date_sub = '2023-11-23'
+xml_name = '22MK5796598D01V6000072'
 # Parse the XML file
-tree = ET.parse('22MK5796598D01V6000072.xml')  # Replace 'note.xml' with your file path
+tree = ET.parse('files\\imd\\' + xml_name + '.xml')  # Replace 'note.xml' with your file path
 root = tree.getroot()
 # Define the namespace
 namespace = {'ns': 'cdeps:import:messages'}
@@ -10,8 +15,8 @@ namespace = {'ns': 'cdeps:import:messages'}
 # Find all <naim> elements inside <body>
 gdi_nodes = root.findall('ns:GOOITEGDS', namespace)
 
-def createResult(dict):
-    f"""<soapenv:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:calc="http://bull.com.pl/calc">
+def createResult(date, currency, items):
+   return f"""<soapenv:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:calc="http://bull.com.pl/calc">
    <soapenv:Header/>
    <soapenv:Body>
       <calc:calculate soapenv:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
@@ -24,39 +29,12 @@ def createResult(dict):
 				</QINF>
 				<SAD>
 					<DTE>
-						<dat_quest>{dict["date"]}</dat_quest>
+						<dat_quest>{date}</dat_quest>
 					</DTE>
 					<CUR>
-						<currency>{dict["currency"]}</currency>
+						<currency>{currency}</currency>
 					</CUR>
-					<ITEMS>
-						<ITM id="1">
-							<GDS nbr="8536909500"/>
-							<GEO>
-								<geo_area_id>GR</geo_area_id>
-							</GEO>
-							<CPC>
-								<eu_proc_code>4000</eu_proc_code>
-								<nat_proc_code>000</nat_proc_code>
-							</CPC>
-							<PRF>
-								<pref_code>300</pref_code>
-							</PRF>
-							<WGT>
-								<net_weight>130.47</net_weight>
-								<gr_weight>130.47</gr_weight>
-							</WGT>
-							<VAL>
-								<customs_value>105929.07</customs_value>
-							</VAL>
-							<ADD>
-								<additional_expenses>0</additional_expenses>
-							</ADD>
-							<DOC>
-								<doc_id>6007</doc_id>
-							</DOC>
-						</ITM>
-					</ITEMS>
+					{items}
 				</SAD>
 				<OPTIONS>
 					<forWeb>true</forWeb>
@@ -69,8 +47,10 @@ def createResult(dict):
     
 
 def createGdi(gdi):
-    return f"""<ITM id="{gdi["num"]}">
-            <GDS nbr="{gdi["comm"]}"/>
+    gdi_str = f"""\n\t\t<ITM id="{gdi["num"]}">
+            <GDS nbr="{gdi["comm"]}">
+                {f"<add_cod>{gdi["add_code"]}</add_cod>" if len(gdi["add_code"]) == 4 else "" }
+            </GDS>
             <GEO>
                 <geo_area_id>{gdi["area"]}</geo_area_id>
             </GEO>
@@ -90,53 +70,73 @@ def createGdi(gdi):
             </VAL>
             <ADD>
                 <additional_expenses>{gdi["add_exp"]}</additional_expenses>
-            </ADD>
-            {gdi["docs"]}
+            </ADD>"""
+    if(gdi["sup"] is not None):
+        gdi_str+= f"""\n\t\t\t<SUP>
+                <sup_element>
+                    <suppl_unit_code>NAR</suppl_unit_code> 
+                    <suppl_unit_quant>{gdi["sup"]}</suppl_unit_quant> 
+                </sup_element>
+            </SUP>"""
+    gdi_str +=f"""\n\t\t\t{gdi["docs"]}
         </ITM>"""
+    return gdi_str
 
 def findNext(gdi, prop, namespace):
     return gdi.find(prop, namespace).text if gdi.find(prop, namespace) is not None else ''
 
 def getRefDocs(gdi):
-    return """<DOC>
-            <doc_id>6007</doc_id>
-        </DOC>"""
+    proddoc_nodes = gdi.findall('ns:PRODOCDC2', namespace)
+    docstring = '<DOC>\n'
+    for prododc in proddoc_nodes:
+        doctype = prododc.find('ns:DocTypDC21',namespace).text if prododc.find('ns:DocTypDC21',namespace) is not None else ''
+        if(len(doctype)!=4):
+            continue
+        docstring += f'\t\t\t\t<doc_id>{doctype}</doc_id>\n'
+
+    docstring += '\t\t\t</DOC>'
+    return docstring
 
 goodsItems = '<ITEMS>'
 for gdi in gdi_nodes:
     gdiDict = {
         "num" : findNext(gdi,'ns:IteNumGDS7', namespace),
-        "area" : findNext(gdi,'ns:GooDesGDS23', namespace),
-        "comm" : findNext(gdi,'ns:GooDesGDS23', namespace),
-        "proc" : findNext(gdi,'ns:GooDesGDS23', namespace),
-        "nat_proc" : findNext(gdi,'ns:GooDesGDS23', namespace),
-        "pref" : findNext(gdi,'ns:GooDesGDS23', namespace),
-        "net_mass" : findNext(gdi,'ns:GooDesGDS23', namespace),
-        "gross_mass" : findNext(gdi,'ns:GooDesGDS23', namespace),
-        "cval" : findNext(gdi,'ns:GooDesGDS23', namespace),
-        "add_exp" : findNext(gdi,'ns:GooDesGDS23', namespace),
+        "area" : findNext(gdi,'ns:CouOfOriGDI1', namespace),
+        "comm" : findNext(gdi,'ns:COMCODGODITM/ns:ComNomCMD1', namespace) + findNext(gdi,'ns:COMCODGODITM/ns:TARCodCMD1', namespace),
+        "proc" : findNext(gdi,'ns:ProReqGDI1', namespace) + findNext(gdi,'ns:PreProGDI1', namespace) ,
+        "nat_proc" : findNext(gdi,'ns:ComNatProGIM1', namespace),
+        "pref" : findNext(gdi,'ns:Pre4046', namespace),
+        "net_mass" : findNext(gdi,'ns:NetMasGDS48', namespace),
+        "gross_mass" : findNext(gdi,'ns:GroMasGDS46', namespace),
+        "cval" : findNext(gdi,'ns:StaValAmoGDI1', namespace),
+        "add_exp" : 0,
         "docs" : getRefDocs(gdi),
+        "sup": findNext(gdi,'ns:SupUniGDI1', namespace),
+        "add_code" : findNext(gdi,'ns:COMCODGODITM/ns:TARFirAddCodCMD1', namespace),
     }
     goodsItems += createGdi(gdiDict)
 
 
-goodsItems += '</ITEMS>'
+goodsItems += '\n\t</ITEMS>'
 
-print(goodsItems)
+req = createResult(date_sub,'EUR',goodsItems)
+with open('files\\req\\req-' + xml_name + '.xml','w') as file:
+    file.write(req)
 
-# url="https://www.dataaccess.com/webservicesserver/NumberConversion.wso"
-# #headers = {'content-type': 'application/soap+xml'}
-# headers = {'content-type': 'text/xml'}
-# dollars = 300
-# body =f"""<?xml version="1.0" encoding="utf-8"?>
-# <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
-#   <soap:Body>
-#     <NumberToDollars xmlns="http://www.dataaccess.com/webservicesserver/">
-#       <dNum>{dollars}</dNum>
-#     </NumberToDollars>
-#   </soap:Body>
-# </soap:Envelope>"""
 
-# response = requests.post(url,data=body,headers=headers)
-# print (response.content)
+url="http://ite-prod.customs.local:9080/calcxml/services/CalcXml"
+headers = {'SOAPAction': 'http://bull.com.pl/calc/calcxml/calcPort/calculateRequest'}
 
+response = requests.post(url,data=req,headers=headers)
+res_text = html.unescape(response.text)
+pattern = r"(<SAD>.*?</SAD>)"
+match =  re.search(pattern, res_text)
+if match:
+    content = match.group(1)  # Extract the captured content
+    root = etree.fromstring(content)
+    pretty_xml = etree.tostring(root, pretty_print=True, encoding="unicode")
+    with open('files\\res\\res-' + xml_name + '.xml','w') as file:
+        file.write(pretty_xml)
+        print(f"Sucess")
+else:
+    print("No match found.")
